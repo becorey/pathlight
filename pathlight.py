@@ -8,15 +8,15 @@ import RPi.GPIO as GPIO
 GPIO.setmode(GPIO.BCM)
 
 class Pathlight(object):
-	def __init__(self):
-		self.initSensors()
-		self.initLeds()
+	def __init__(self, sensorPins, ledPins):
+		self.initSensors(sensorPins)
+		self.initLeds(ledPins)
 		return
 	
-	def initSensors(self):
+	def initSensors(self, sensorPins):
 		return
 	
-	def initLeds(self):
+	def initLeds(self, ledPins):
 		return
 
 
@@ -88,6 +88,10 @@ for led in leds:
 
 
 if __name__ == '__main__':
+	#GPIO.setmode(GPIO.BCM)
+		
+	pa = Pathlight([18], [6, 13, 19, 26])
+	
 	try:
 		i = 0
 		while True:
