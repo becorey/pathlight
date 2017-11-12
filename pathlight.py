@@ -26,13 +26,13 @@ class Pathlight(object):
 	def initSensors(self, sensorPins):
 		self.sensors = []
 		for pin in sensorPins	:
-			self.sensors.append(MotionSensor(pin))
+			self.sensors.append(MotionSensor(self, pin))
 		return
 	
 	def initLeds(self, ledPins):
 		self.leds = []
 		for rgb in ledPins:
-			self.leds.append(Led(rgb, 30, queue.Queue()))
+			self.leds.append(Led(self, rgb, 30, queue.Queue()))
 		return
 		
 	def shutdown(self):
@@ -43,24 +43,28 @@ class Pathlight(object):
 
 
 class MotionSensor(object):
-	def __init__(self, pin):
+	def __init__(self, parent, pin):
+		self.parent = parent
 		self.pin = pin
-		GPIO.setup(self.pin, GPIO.IN)
+		GPIO.setup(self.pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 		GPIO.add_event_detect(self.pin, GPIO.BOTH, callback=self.motionSensed)
 		return
 		
 	def motionSensed(self, pin):
 		val = GPIO.input(pin)
 		if val:
-			print('motion entered')
+			print('++++++++++ motion entered ++++++++++')
+			self.parent.leds[0].queue.put([100, 0, 100])
 		else:
-			print('motion exited')
+			print('---------- motion exited')
+			self.parent.leds[0].queue.put([100, 100, 100])
 		print(time.time())
 		return True
 
 
 class Led(threading.Thread):
-	def __init__(self, pins, updateFrequency, queue):
+	def __init__(self, parent, pins, updateFrequency, queue):
+		self.parent = parent
 		self.pins = pins
 		self.pwm = [None] * len(self.pins)
 		self.updateFrequency = updateFrequency
@@ -76,9 +80,9 @@ class Led(threading.Thread):
 		#each R,G,B pin
 		for i,pin in enumerate(self.pins):
 			GPIO.setup(pin, GPIO.OUT)
-			GPIO.output(pin, 0)
-			self.pwm[i] = GPIO.PWM(pin, 50)
-			self.pwm[i].start(1)
+			GPIO.output(pin, 1)
+			self.pwm[i] = GPIO.PWM(pin, 60)
+			self.pwm[i].start(100.0)
 		
 		self.start()
 		return
@@ -99,7 +103,7 @@ class Led(threading.Thread):
 			if q == 'shutdown':
 				self.shutdown.set()
 			if q != None:
-				logging.debug(str(q)+" on the queue")
+				#logging.debug(str(q)+" on the queue")
 				if q != self.brightness:
 					r = [self.brightness[0], q[0]]
 					g = [self.brightness[1], q[1]]
@@ -133,11 +137,11 @@ class Led(threading.Thread):
 		#logging.debug(str(self.pin)+" "+str(self.transition))
 		if len(self.transition)>0:
 			#set brightness to first value on the transition array
-			print('transition = '+str(self.transition))
+			#print('transition = '+str(self.transition))
 			for i,rgb in enumerate(self.transition[0]):
-				print('i = '+str(i))
-				print('brightness='+str(self.brightness))
-				print('rgb = '+str(rgb))
+				#print('i = '+str(i))
+				#print('brightness='+str(self.brightness))
+				#print('rgb = '+str(rgb))
 				self.brightness[i] = boundedValue(rgb, 0.0, 100.0)
 				self.pwm[i].ChangeDutyCycle(self.brightness[i])
 			#remove that first element from transition
@@ -158,14 +162,14 @@ if __name__ == '__main__':
 	try:
 		i = 0
 		while True:
-			led = pa.leds[0]
-			j = i%3
-			if j == 0:
-				led.queue.put([0.0, 100.0, 100.0])
-			elif j == 1:
-				led.queue.put([100.0, 0.0, 100.0])
-			elif j == 2:
-				led.queue.put([100.0, 100.0, 0.0])
+			#led = pa.leds[0]
+			#j = i%3
+			#if j == 0:
+			#	led.queue.put([0.0, 100.0, 100.0])
+			#elif j == 1:
+			#	led.queue.put([100.0, 0.0, 100.0])
+			#elif j == 2:
+			#	led.queue.put([100.0, 100.0, 0.0])
 
 			i = i+1
 			time.sleep(2)
