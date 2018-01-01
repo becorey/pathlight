@@ -9,18 +9,18 @@ else:
 	import queue as queue
 import RPi.GPIO as GPIO
 import logging
+from ws2801 import ws2801
 
 logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s (%(threadName)-10s) %(message)s',)
 
 GPIO.setmode(GPIO.BCM)
 
 class Pathlight(object):
-	def __init__(self, sensorPins, ledPins):
+	def __init__(self, sensorPins):
 		self.sendsorPins = sensorPins
-		self.ledPins = ledPins
+		self.led = ws2801(queue.Queue())
 		
 		self.initSensors(sensorPins)
-		self.initLeds(ledPins)
 		return
 	
 	def initSensors(self, sensorPins):
@@ -28,17 +28,11 @@ class Pathlight(object):
 		for pin in sensorPins	:
 			self.sensors.append(MotionSensor(self, pin))
 		return
-	
-	def initLeds(self, ledPins):
-		self.leds = []
-		for rgb in ledPins:
-			self.leds.append(Led(self, rgb, 30, queue.Queue()))
-		return
+
 		
 	def shutdown(self):
+		self.led.brightness_decrease(.01, 10)
 		GPIO.cleanup()
-		for le in self.leds:
-			le.shutdown.set()
 		return
 
 
@@ -54,11 +48,13 @@ class MotionSensor(object):
 		val = GPIO.input(pin)
 		if val:
 			print('++++++++++ motion entered ++++++++++')
-			self.parent.leds[0].queue.put([100, 0, 100])
+			#self.parent.leds[0].queue.put([100, 0, 100])
+			self.parent.led.fadeFromEnd()
 		else:
 			print('---------- motion exited')
-			self.parent.leds[0].queue.put([100, 100, 100])
-		print(time.time())
+			#self.parent.leds[0].queue.put([100, 100, 100])
+			self.parent.led.brightness_decrease(1.0, 50)
+		#print(time.time())
 		return True
 
 
@@ -156,21 +152,11 @@ def boundedValue(n, smallest, largest):
 if __name__ == '__main__':
 		
 	motionSensors = [18]
-	leds = [[6, 13, 19]]
-	pa = Pathlight(motionSensors, leds)
+	pa = Pathlight(motionSensors)
 	
 	try:
 		i = 0
 		while True:
-			#led = pa.leds[0]
-			#j = i%3
-			#if j == 0:
-			#	led.queue.put([0.0, 100.0, 100.0])
-			#elif j == 1:
-			#	led.queue.put([100.0, 0.0, 100.0])
-			#elif j == 2:
-			#	led.queue.put([100.0, 100.0, 0.0])
-
 			i = i+1
 			time.sleep(2)
 	except KeyboardInterrupt:
