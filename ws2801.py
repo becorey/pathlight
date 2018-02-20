@@ -99,7 +99,7 @@ class ws2801(threading.Thread):
 				self.pixels.show()
 				time.sleep(0.01)
 	
-	def fadeFromEnd(self, transTime = 4.0, rootPoint=0, targetColor=(255,200,100)):
+	def fadeFromEnd(self, transTime = 4.0, targetColor=(255,200,100), rootPoint=0):
 		N = self.pixels.count()
 		Nsteps = 150
 		dt = transTime / float(Nsteps)
