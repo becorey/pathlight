@@ -19,17 +19,17 @@ class Pathlight(object):
 	def __init__(self, sensorPins):
 		self.sendsorPins = sensorPins
 		self.led = ws2801(queue.Queue())
-		
+
 		self.initSensors(sensorPins)
 		return
-	
+
 	def initSensors(self, sensorPins):
 		self.sensors = []
 		for pin in sensorPins	:
 			self.sensors.append(MotionSensor(self, pin))
 		return
 
-		
+
 	def shutdown(self):
 		self.led.brightness_decrease(.01, 10)
 		GPIO.cleanup()
@@ -43,7 +43,7 @@ class MotionSensor(object):
 		GPIO.setup(self.pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 		GPIO.add_event_detect(self.pin, GPIO.BOTH, callback=self.motionSensed)
 		return
-		
+
 	def motionSensed(self, pin):
 		val = GPIO.input(pin)
 		if val:
@@ -56,7 +56,7 @@ class MotionSensor(object):
 			self.parent.led.brightness_decrease(2.0, 100)
 		#print(time.time())
 		return True
-		
+
 
 def boundedValue(n, smallest, largest):
 	return max(smallest, min(n, largest))
@@ -64,10 +64,10 @@ def boundedValue(n, smallest, largest):
 
 
 if __name__ == '__main__':
-		
-	motionSensors = [18]
+
+	motionSensors = [26]
 	pa = Pathlight(motionSensors)
-	
+
 	try:
 		i = 0
 		while True:
@@ -75,6 +75,6 @@ if __name__ == '__main__':
 			time.sleep(2)
 	except KeyboardInterrupt:
 		print('Exiting')
-		
+
 	finally:
 		pa.shutdown()
