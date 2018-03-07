@@ -49,11 +49,11 @@ class MotionSensor(object):
 		if val:
 			print('++++++++++ motion entered ++++++++++')
 			#self.parent.leds[0].queue.put([100, 0, 100])
-			self.parent.led.fadeFromEnd(4.5)
+			self.parent.led.fadeIn(rgb=[255,255,255], transTime = 4.0, steps = 50)
 		else:
 			print('---------- motion exited')
 			#self.parent.leds[0].queue.put([100, 100, 100])
-			self.parent.led.brightness_decrease(2.0, 100)
+			self.parent.led.brightness_decrease(transTime = 2.0, steps = 20)
 		#print(time.time())
 		return True
 

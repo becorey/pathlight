@@ -7,7 +7,7 @@ if is_py2:
 	import Queue as queue
 else:
 	import queue as queue
- 
+
 # Import the WS2801 module.
 import Adafruit_WS2801
 import Adafruit_GPIO.SPI as SPI
@@ -17,13 +17,18 @@ mtime = lambda: int(round(time.time()*1000))
 class ws2801(threading.Thread):
 	def __init__(self, queue, PIXEL_COUNT = 64):
 		self.PIXEL_COUNT = PIXEL_COUNT
+		PIXEL_CLOCK = 21
+		PIXEL_DOUT  = 20
 		SPI_PORT   = 0
 		SPI_DEVICE = 0
-		self.pixels = Adafruit_WS2801.WS2801Pixels(self.PIXEL_COUNT, spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE), gpio=GPIO)
+		# hardware SPI.. not working
+		#self.pixels = Adafruit_WS2801.WS2801Pixels(self.PIXEL_COUNT, spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE), gpio=GPIO)
+		# software SPI
+		self.pixels = Adafruit_WS2801.WS2801Pixels(PIXEL_COUNT, clk=PIXEL_CLOCK, do=PIXEL_DOUT)
 		self.pixels.clear()
-		self.pixels.show() 
+		self.pixels.show()
 		return
-	
+
 	# Define the wheel function to interpolate between different hues.
 	def wheel(self, pos):
 		if pos < 85:
@@ -34,7 +39,7 @@ class ws2801(threading.Thread):
 		else:
 			pos -= 170
 			return Adafruit_WS2801.RGB_to_color(0, pos * 3, 255 - pos * 3)
- 
+
 	# Define rainbow cycle function to do a cycle of all hues.
 	def rainbow_cycle_successive(self, wait=0.1):
 		for i in range(self.pixels.count()):
@@ -46,7 +51,7 @@ class ws2801(threading.Thread):
 			self.pixels.show()
 			if wait > 0:
 				time.sleep(wait)
- 
+
 	def rainbow_cycle(self, wait=0.005):
 		for j in range(256): # one cycle of all 256 colors in the wheel
 			for i in range(self.pixels.count()):
@@ -54,7 +59,7 @@ class ws2801(threading.Thread):
 			self.pixels.show()
 			if wait > 0:
 				time.sleep(wait)
-	 
+
 	def rainbow_colors(self, wait=0.05):
 		for j in range(256): # one cycle of all 256 colors in the wheel
 			for i in range(self.pixels.count()):
@@ -62,9 +67,9 @@ class ws2801(threading.Thread):
 			self.pixels.show()
 			if wait > 0:
 				time.sleep(wait)
- 
-	def brightness_decrease(self, transitionTime=1.0, steps=50):
-		dt = transitionTime/float(steps)
+
+	def brightness_decrease(self, transTime=1.0, steps=50):
+		dt = transTime/float(steps)
 		#first build an array for the rgb transition values, for each pixel
 		il = self.pixels.count()
 		rt = [None]*il
@@ -81,11 +86,23 @@ class ws2801(threading.Thread):
 		#then step through the arrays
 		for j in range(steps-1, -1, -1):
 			for i in range(il):
-				#print("brightness_decrease, rgb = "+str(int(rt[i][j]))+","+str(int(gt[i][j]))+","+str(int(bt[i][j])))					
+				#print("brightness_decrease, rgb = "+str(int(rt[i][j]))+","+str(int(gt[i][j]))+","+str(int(bt[i][j])))
 				self.pixels.set_pixel(i, Adafruit_WS2801.RGB_to_color( int(rt[i][j]), int(gt[i][j]), int(bt[i][j]) ))
 			self.pixels.show()
 			time.sleep(dt)
- 
+
+	def fadeIn(self, rgb=[255,255,255], transTime = 4.0, steps=50):
+		dt = transTime/float(steps)
+		N = self.pixels.count()
+		for i in range(steps):
+			for Ni in range (N):
+				r = int(rgb[0]*i/float(steps))
+				g = int(rgb[1]*i/float(steps))
+				b = int(rgb[2]*i/float(steps))
+				self.pixels.set_pixel(Ni, Adafruit_WS2801.RGB_to_color(r,g,b))
+			self.pixels.show()
+			time.sleep(dt)
+
 	def appear_from_back(self, color=(255, 0, 255)):
 		pos = 0
 		for i in range(self.pixels.count()):
@@ -98,7 +115,7 @@ class ws2801(threading.Thread):
 				self.pixels.set_pixel(j, Adafruit_WS2801.RGB_to_color( color[0], color[1], color[2] ))
 				self.pixels.show()
 				time.sleep(0.01)
-	
+
 	def fadeFromEnd(self, transTime = 4.0, targetColor=(255,200,100), rootPoint=0):
 		N = self.pixels.count()
 		Nsteps = 150
@@ -123,15 +140,15 @@ class ws2801(threading.Thread):
 				self.pixels.set_pixel(x, Adafruit_WS2801.RGB_to_color(rgb[0], rgb[1], rgb[2]))
 			self.pixels.show() # contains a sleep(0.002), Nsteps affects total time
 			time.sleep(dt)
-		
- 
+
+
 if __name__ == "__main__":
 	print("Starting lightshow")
-	
+
 	try:
 		ledstrip = ws2801(queue.Queue())
-		
-		#ledstrip.rainbow_cycle_successive(0.1)
+
+		ledstrip.rainbow_cycle_successive(0.1)
 		#ledstrip.rainbow_cycle(0.01)
 		#ledstrip.brightness_decrease()
 		#ledstrip.rainbow_colors()
@@ -141,7 +158,7 @@ if __name__ == "__main__":
 		lengthtime = (endtime - starttime)/1000.0
 		print(str(lengthtime)+" seconds")
 		#ledstrip.brightness_decrease()
-		
+
 	except KeyboardInterrupt:
 		print('Exiting')
 	finally:
